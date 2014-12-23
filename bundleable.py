@@ -2,6 +2,8 @@ __author__ = 'scobb'
 import inspect
 from bundle import Bundle
 
+#TODO - maybe add dict support? Not sure it's necessary.
+
 
 class Bundleable(object):
     def __init__(self):
@@ -59,6 +61,7 @@ class Bundleable(object):
         constructor_args = inspect.getargspec(cls.__init__)[0]
         for arg_name in constructor_args:
             if arg_name != 'self' and arg_name not in args:
+                # grab extra arguments we need from the bundle
                 try:
                     # try to evaluate primitives back to what they are (lists, etc)
                     args[arg_name] = eval(bnd.get_value(prefix + arg_name))
@@ -102,13 +105,12 @@ class BundleableMetadata(Metadata):
         """
         method - decodes object for self metadata from bundle
         :param bnd: bundle to decode
-        :return: object this metadata was representing
+        :return: Bundleable object this metadata was representing
         """
         module, imp_class = self.arg_type.split('.')
         module = __import__(module)
         module = getattr(module, imp_class)
         return module.from_bundle(bnd, prefix=self.prefix)
-
 
 
 class ListMetadata(Metadata):
@@ -135,9 +137,13 @@ class ListMetadata(Metadata):
         else:
             # lists of bundleables
             module, imp_class = self.arg_type.split('.')
+
+            # import appropriate module
             module = __import__(module)
             module = getattr(module, imp_class)
+
+            # unbundle the objects into our result list
             res_list = []
             for i in range(int(self.num)):
-                res_list.append(module.from_bundle(bnd, prefix=self.prefix + '%d.' % i))
+                res_list.append(module.from_bundle(bnd, prefix='%s%d.' % (self.prefix, i)))
         return res_list
