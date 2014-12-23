@@ -3,7 +3,7 @@ __author__ = 'scobb'
 from bundleable import Bundleable
 
 class NavMessage(Bundleable):
-    def __init__(self, lat, lon, depth, altitude, **kwargs):
+    def __init__(self, lat, lon, depth, altitude):
         self.lat = lat
         self.lon = lon
         self.depth = depth

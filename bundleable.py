@@ -1,7 +1,6 @@
 __author__ = 'scobb'
-
+import inspect
 from bundle import Bundle
-import sys
 
 
 class Bundleable(object):
@@ -10,35 +9,36 @@ class Bundleable(object):
 
     def to_bundle(self, prefix=''):
         bnd = Bundle()
-        count = 0
+        metacount = 0
         bnd.set_value(prefix + 'type', self.__class__.__name__)
         for key, val in self.__dict__.iteritems():
             if isinstance(val, Bundleable):
                 # take care of nested bundleables
-                bnd.assimilate(val.to_bundle(prefix=prefix + key + '.'))
+                bnd.assimilate(val.to_bundle(prefix='%s%s.' % (prefix, key)))
                 arg_type = val.__module__ + '.' + val.__class__.__name__
-                meta = BundleableMetadata(key, arg_type, prefix + key + '.')
-                bnd.assimilate(meta.to_bundle(prefix + 'meta.%d.' % count))
-                count += 1
+                meta = BundleableMetadata(key, arg_type, '%s%s.' % (prefix, key))
+                bnd.assimilate(meta.to_bundle('%smeta.%d.' % (prefix, metacount)))
+                metacount += 1
             elif isinstance(val, list):
                 # take care of a list
                 if val:
                     if isinstance(val[0], Bundleable):
                         # list of bundleables
-                        bnd.assimilate(self.encode_list(val, prefix=prefix + key + '.'))
+                        bnd.assimilate(self.encode_list(val, prefix='%s%s.' % (prefix, key)))
                         arg_type = val[0].__module__ + '.' + val[0].__class__.__name__
-                        meta = ListMetadata(key, arg_type, prefix + key + '.', len(val))
-                        bnd.assimilate(meta.to_bundle(prefix + 'meta.%d.' % count))
-                        count += 1
+                        meta = ListMetadata(key, arg_type, '%s%s.' % (prefix, key), len(val))
+                        bnd.assimilate(meta.to_bundle('%smeta.%d.' % (prefix, metacount)))
+                        metacount += 1
                     else:
-                        # list of primitives
+                        # list of primitives - anything that can be converted to/from a string
                         for i, obj in enumerate(val):
-                            bnd.set_value(prefix + '%s.%d' % (key, i), obj)
-                        meta = ListMetadata(key, 'prim', prefix + key + '.', len(val))
-                        bnd.assimilate(meta.to_bundle(prefix + 'meta.%d.' % count))
-                        count += 1
+                            bnd.set_value('%s%s.%d' % (prefix, key, i), obj)
+                        meta = ListMetadata(key, 'prim', '%s%s.' % (prefix, key), len(val))
+                        bnd.assimilate(meta.to_bundle('%smeta.%d.' % (prefix, metacount)))
+                        metacount += 1
                 else:
-                    bnd.set_value(key, val)
+                    # empty list
+                    bnd.set_value('%s%s' % (prefix, key), val)
             else:
                 bnd.set_value(prefix + key, self.__dict__[key])
         return bnd
@@ -48,40 +48,45 @@ class Bundleable(object):
         count = 0
         meta = []
         while prefix + 'meta.%d.key' % count in bnd.keys():
+            # grab the appropriate metadata class
             meta_type = eval(bnd.get_value(prefix + 'meta.%d.type' % count))
             meta.append(meta_type.from_bundle(bnd, prefix=prefix+'meta.%d.' % count))
             count += 1
         args = {}
         for metadata in meta:
+            # use metadata to parse complex data
             args[metadata.key] = metadata.decode(bnd)
-        for key in bnd.keys():
-            args[key.replace(prefix, '')] = bnd.get_value(key)
+        constructor_args = inspect.getargspec(cls.__init__)[0]
+        for arg_name in constructor_args:
+            if arg_name != 'self' and arg_name not in args:
+                args[arg_name] = bnd.get_value(prefix + arg_name)
 
         return cls(**args)
 
-    def encode_list(self, item_list, prefix=''):
+    @staticmethod
+    def encode_list(item_list, prefix=''):
         bnd = Bundle()
         for i, item in enumerate(item_list):
             bnd.assimilate(item.to_bundle('%s%d.' % (prefix, i)))
         return bnd
 
-    @classmethod
-    def decode_list(cls, bnd, prefix=''):
-        decoded_list = []
-        i = 0
-        while '%s.%d.type' % (prefix, i) in bnd.keys():
-            decoded_list.append(cls.from_bundle(bnd, prefix + cls.__name__ + '.%d.' % i))
-            i += 1
-        return decoded_list
-
 
 class BundleableMetadata(Bundleable):
-    def __init__(self, key, arg_type, prefix, **kwargs):
+    """
+    class - used for bundling inner classes
+    """
+
+    def __init__(self, key, arg_type, prefix):
         self.key = key
         self.arg_type = arg_type
         self.prefix = prefix
 
     def decode(self, bnd):
+        """
+        method - decodes object for self metadata from bundle
+        :param bnd: bundle to decode
+        :return: object this metadata was representing
+        """
         module, imp_class = self.arg_type.split('.')
         module = __import__(module)
         module = getattr(module, imp_class)
@@ -90,13 +95,21 @@ class BundleableMetadata(Bundleable):
 
 
 class ListMetadata(Bundleable):
-    def __init__(self, key, arg_type, prefix, num, **kwargs):
+    """
+    class - used for bundling lists
+    """
+    def __init__(self, key, arg_type, prefix, num):
         self.key = key
         self.arg_type = arg_type
         self.prefix = prefix
         self.num = num
 
     def decode(self, bnd):
+        """
+        method - decodes list of objects from self metadata
+        :param bnd: bundle to decode
+        :return: list of objects this metadata was representing
+        """
         if self.arg_type == 'prim':
             # lists of primitives
             res_list = []
