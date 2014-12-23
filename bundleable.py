@@ -59,7 +59,12 @@ class Bundleable(object):
         constructor_args = inspect.getargspec(cls.__init__)[0]
         for arg_name in constructor_args:
             if arg_name != 'self' and arg_name not in args:
-                args[arg_name] = bnd.get_value(prefix + arg_name)
+                try:
+                    # try to evaluate primitives back to what they are (lists, etc)
+                    args[arg_name] = eval(bnd.get_value(prefix + arg_name))
+                except:
+                    # if this doesn't work, it's probably metadata--a class name. just use the string.
+                    args[arg_name] = bnd.get_value(prefix + arg_name)
 
         return cls(**args)
 
@@ -70,8 +75,20 @@ class Bundleable(object):
             bnd.assimilate(item.to_bundle('%s%d.' % (prefix, i)))
         return bnd
 
+class Metadata(Bundleable):
+    """
+    interface - defines the metadata interface
+    """
+    def __init__(self):
+        raise NotImplementedError
 
-class BundleableMetadata(Bundleable):
+    def decode(self, bndl):
+        """
+        method - to be defined by all metadata. This is how we get an object back.
+        """
+        raise NotImplementedError
+
+class BundleableMetadata(Metadata):
     """
     class - used for bundling inner classes
     """
@@ -94,7 +111,7 @@ class BundleableMetadata(Bundleable):
 
 
 
-class ListMetadata(Bundleable):
+class ListMetadata(Metadata):
     """
     class - used for bundling lists
     """

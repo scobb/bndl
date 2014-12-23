@@ -18,3 +18,5 @@ if __name__ == '__main__':
     bnd = nav_list.to_bundle('nav_list.')
     print bnd.get_header_as_string()
     nl2 = NavList.from_bundle(bnd, prefix='nav_list.')
+    nl2.str_list.append('hi')
+    print nl2.to_bundle(prefix='nl2.').get_header_as_string()
