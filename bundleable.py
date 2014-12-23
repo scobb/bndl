@@ -34,9 +34,9 @@ class Bundleable(object):
                         # list of primitives
                         for i, obj in enumerate(val):
                             bnd.set_value(prefix + '%s.%d' % (key, i), obj)
-                            meta = ListMetadata(key, 'prim', prefix + key + '.', len(val))
-                            bnd.assimilate(meta.to_bundle(prefix + 'meta.%d.' % count))
-                            count += 1
+                        meta = ListMetadata(key, 'prim', prefix + key + '.', len(val))
+                        bnd.assimilate(meta.to_bundle(prefix + 'meta.%d.' % count))
+                        count += 1
                 else:
                     bnd.set_value(key, val)
             else:
@@ -100,9 +100,8 @@ class ListMetadata(Bundleable):
         if self.arg_type == 'prim':
             # lists of primitives
             res_list = []
-            print self.num
             for i in xrange(int(self.num)):
-                res_list.append(bnd.get_value('%s%s' % (self.prefix, self.num)))
+                res_list.append(bnd.get_value('%s%s' % (self.prefix, i)))
         else:
             # lists of bundleables
             module, imp_class = self.arg_type.split('.')
