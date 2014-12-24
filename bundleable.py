@@ -10,6 +10,15 @@ class Bundleable(object):
         raise NotImplementedError
 
     def to_bundle(self, prefix=''):
+        """ Turns an object into a serialized bundle.
+
+        Args:
+            prefix: The prefix to prepend to the keys corresponding to the
+                    instance variable names
+
+        Returns:
+            A serialized bundle that can be unbundled into the same object.
+        """
         bnd = Bundle()
         metacount = 0
         bnd.set_value(prefix + 'type', self.__class__.__name__)
@@ -47,6 +56,12 @@ class Bundleable(object):
 
     @classmethod
     def from_bundle(cls, bnd, prefix=''):
+        """ Takes a bundle and turns it into an object.
+
+        Args:
+            bnd: The bundle to use to create an object
+            prefix: The prefix to use to unbundle the object
+        """
         count = 0
         meta = []
         while prefix + 'meta.%d.key' % count in bnd.keys():
@@ -147,3 +162,4 @@ class ListMetadata(Metadata):
             for i in range(int(self.num)):
                 res_list.append(module.from_bundle(bnd, prefix='%s%d.' % (self.prefix, i)))
         return res_list
+
