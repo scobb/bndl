@@ -10,7 +10,7 @@ class NavList(Bundleable):
         self.int_list = int_list
         self.str_list = str_list
 
-if __name__ == '__main__':
+def run():
     nav_msg_list = []
     for i in xrange(5):
         nav_msg_list.append(NavMessage(i, i, i, i))
@@ -20,3 +20,10 @@ if __name__ == '__main__':
     nl2 = NavList.from_bundle(bnd, prefix='nav_list.')
     nl2.str_list.append('hi')
     print nl2.to_bundle(prefix='nl2.').get_header_as_string()
+
+    nm = NavMessage(1, 1, 1, 1)
+    # TODO (lemonade512) Should we remove the need to always have a dot at the end of a prefix?
+    bnd = nm.to_bundle('nav.')
+    print bnd.get_header_as_string()
+    nm = NavMessage.from_bundle(bnd, prefix='nav.')
+    print nm

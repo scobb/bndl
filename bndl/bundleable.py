@@ -106,6 +106,9 @@ class Metadata(Bundleable):
         """
         raise NotImplementedError
 
+
+#TODO (lemonade512) Write tests to make sure the decoding import stuff works from the root directory,
+#                   and down multiple levels
 class BundleableMetadata(Metadata):
     """
     class - used for bundling inner classes
@@ -122,8 +125,13 @@ class BundleableMetadata(Metadata):
         :param bnd: bundle to decode
         :return: Bundleable object this metadata was representing
         """
-        module, imp_class = self.arg_type.split('.')
-        module = __import__(module)
+        root_package = self.arg_type.split('.')[0]
+        path_to_module = self.arg_type.split('.')[1:-1]
+        imp_class = self.arg_type.split('.')[-1]
+
+        module = __import__(root_package)
+        for name in path_to_module:
+            module = module.__dict__[name]
         module = getattr(module, imp_class)
         return module.from_bundle(bnd, prefix=self.prefix)
 
@@ -151,10 +159,14 @@ class ListMetadata(Metadata):
                 res_list.append(bnd.get_value('%s%s' % (self.prefix, i)))
         else:
             # lists of bundleables
-            module, imp_class = self.arg_type.split('.')
+            root_package = self.arg_type.split('.')[0]
+            path_to_module = self.arg_type.split('.')[1:-1]
+            imp_class = self.arg_type.split('.')[-1]
 
             # import appropriate module
-            module = __import__(module)
+            module = __import__(root_package)
+            for name in path_to_module:
+                module = module.__dict__[name]
             module = getattr(module, imp_class)
 
             # unbundle the objects into our result list
