@@ -1,6 +1,7 @@
 __author__ = 'scobb'
 
-from bundleable import Bundleable
+from bndl.bundleable import Bundleable
+
 
 class NavMessage(Bundleable):
 
@@ -9,10 +10,6 @@ class NavMessage(Bundleable):
         self.lon = lon
         self.depth = depth
         self.altitude = altitude
-
-        #self.my_dict = dict()
-        #self.my_dict['key1'] = "val1"
-        #self.my_dict['key2'] = "val2"
 
     def __eq__(self, other):
         if isinstance(other, NavMessage):

@@ -125,6 +125,7 @@ class BundleableMetadata(Metadata):
         :param bnd: bundle to decode
         :return: Bundleable object this metadata was representing
         """
+        # Assumption: self.arg_type has at least 2 values when split
         root_package = self.arg_type.split('.')[0]
         path_to_module = self.arg_type.split('.')[1:-1]
         imp_class = self.arg_type.split('.')[-1]
@@ -159,6 +160,7 @@ class ListMetadata(Metadata):
                 res_list.append(bnd.get_value('%s%s' % (self.prefix, i)))
         else:
             # lists of bundleables
+            # Assumption: self.arg_type has at least 2 values when split
             root_package = self.arg_type.split('.')[0]
             path_to_module = self.arg_type.split('.')[1:-1]
             imp_class = self.arg_type.split('.')[-1]
