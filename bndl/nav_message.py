@@ -20,6 +20,9 @@ class NavMessage(Bundleable):
         else:
             return NotImplemented
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
 if __name__ == '__main__':
     nav_msg = NavMessage(1, 2, 3, 4)
     bnd = nav_msg.to_bundle('nav.')
